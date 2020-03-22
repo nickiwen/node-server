@@ -7,6 +7,7 @@ const SQLConnect = require("./SQLConnect.js");
 const url = require("url");
 const config = require('./util/config');
 const util = require('./util/util')
+const city = require("./data/city.json");
 
 /**
  * banner接口地址
@@ -33,13 +34,16 @@ router.get("/indexlist/detail", (req, res) => {
 })
 
 /**
- * 食疗仿列表数据
- * 参数page
+ * 食疗仿列表数据:列表数据
+ * 
+ * http://localhost:3002/api/foods/list?city=%E4%B8%8A%E6%B5%B7&page=1
  */
 router.get("/foods/list", (req, res) => {
     var page = url.parse(req.url, true).query.page || 1;
-    const sql = "select * from goods limit 10 offset " + (page - 1) * 10;
-    SQLConnect(sql, null, (result) => {
+    var city = url.parse(req.url, true).query.city;
+    const sql = "select * from goods where city=? limit 10 offset " + (page - 1) * 10;
+    var arr = [city]
+    SQLConnect(sql, arr, (result) => {
         if (result.length > 0) {
             res.send({
                 status: 200,
@@ -58,7 +62,16 @@ router.get("/foods/list", (req, res) => {
 })
 
 /**
+ * 增加热门城市接口
+ */
+
+router.get("/hot/city", (req, res) => {
+    res.send(city);
+})
+
+/**
  * 食疗坊列表数据详情
+ * 详情是的图片，需要多张 待定
  */
 router.get("/foods/list/detail", (req, res) => {
     var id = url.parse(req.url, true).query.id || 1;
@@ -80,12 +93,14 @@ router.get("/foods/list/detail", (req, res) => {
 })
 
 /**
- * 搜索模糊查询
+ * 搜索模糊查询，
+ * 增加城市字段
  */
 
 router.get("/foods/select", (req, res) => {
     var name = url.parse(req.url, true).query.name;
-    const sql = "select * from goods where name like '%"+name+"%'";
+    var city = url.parse(req.url, true).query.city; // 待定参数
+    const sql = "select * from goods where name like '%" + name + "%'";
     // var arr = [name]
     SQLConnect(sql, null, (result) => {
         if (result.length > 0) {
@@ -160,11 +175,11 @@ router.get("/cart/add", (req, res) => {
     var price = url.parse(req.url, true).query.price;
 
     const sql = "insert into cart values (null,?,?,?,?,?)";
-    var arr = [name,pic,num,info,price];
+    var arr = [name, pic, num, info, price];
     SQLConnect(sql, arr, (result) => {
         if (result.affectedRows > 0) {
             res.send({
-                status:200,
+                status: 200,
                 success: true
             })
         } else {
@@ -185,7 +200,7 @@ router.get("/cart/delete", (req, res) => {
     SQLConnect(sql, arr, (result) => {
         if (result.affectedRows > 0) {
             res.send({
-                status:200,
+                status: 200,
                 success: true
             })
         } else {
@@ -204,11 +219,11 @@ router.get("/cart/update", (req, res) => {
     var id = url.parse(req.url, true).query.id;
     var num = url.parse(req.url, true).query.num;
     const sql = "update cart set num=? WHERE id=?";
-    var arr = [num,id]
+    var arr = [num, id]
     SQLConnect(sql, arr, (result) => {
         if (result.affectedRows > 0) {
             res.send({
-                status:200,
+                status: 200,
                 success: true
             })
         } else {
@@ -227,7 +242,7 @@ router.get("/cart/update", (req, res) => {
 router.get('/lbs/location', function (req, res, next) {
     let lat = req.query.latitude
     let lng = req.query.longitude
-  
+
     request.get({
         uri: 'https://apis.map.qq.com/ws/geocoder/v1/',
         json: true,
@@ -240,10 +255,29 @@ router.get('/lbs/location', function (req, res, next) {
             res.send(data)
         } else {
             res.send({
-                msg:"获取失败"
+                msg: "获取失败"
             })
         }
     })
+})
+
+/**
+ * 购买接口
+ * post:user, id
+ */
+router.post("/buy", (req, res) => {
+    const user = req.body.user;
+    const id = req.body.id;
+    if (user && id) {
+        res.send({
+            status: 200,
+            msg: '恭喜您,购买成功'
+        })
+    } else {
+        res.status(500).send({
+            msg: "修改失败"
+        });
+    }
 })
 
 
@@ -275,14 +309,19 @@ router.get("/login", (req, res) => {
         /**
          * 存储数据到数据库
          */
-        res.json({ 
+        res.json({
             code: 0,
             data: {
-                userId:'10000001'
-            }, 
-            message: "登录成功" 
+                userId: '10000001'
+            },
+            message: "登录成功"
         })
     }
 })
+
+/**
+ * 用户推荐数据接口:随机
+ */
+
 
 module.exports = router;
