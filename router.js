@@ -275,7 +275,7 @@ router.post("/buy", (req, res) => {
         })
     } else {
         res.status(500).send({
-            msg: "修改失败"
+            msg: "购买失败"
         });
     }
 })
@@ -321,7 +321,29 @@ router.get("/login", (req, res) => {
 
 /**
  * 用户推荐数据接口:随机
+ * 参数:用户user
  */
+router.get("/recommand",(req,res) =>{
+    var user = url.parse(req.url, true).query.user;
+    var  sql = "SELECT * FROM goods ORDER BY RAND() LIMIT 4"
+    SQLConnect(sql, null, (result) => {
+        if (result.length > 0) {
+            res.send({
+                status: 200,
+                user:user,
+                data: {
+                    result: result
+                }
+            });
+        } else {
+            res.send({
+                status: 500,
+                msg: "暂无数据"
+            });
+        }
+
+    })
+})
 
 
 module.exports = router;
